@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>교실 편성 프로그램</title>
+	<style>
+		body {
+			background: #f5f5f5;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			margin: 0;
+		}
+		.classroom {
+			position: relative;
+			width: 600px;
+			height: 600px;
+			background: #fff;
+			border: 4px solid #bbb;
+			border-radius: 20px;
+			box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+			align-items: center;
+		}
+		.blackboard {
+			margin-top: 30px;
+			width: 400px;
+			height: 70px;
+			background: #2e7d32;
+			border: 6px solid #8d5524;
+			border-radius: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			font-size: 2rem;
+			font-weight: bold;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+		}
+		.desks {
+			margin-top: 40px;
+			width: 500px;
+			display: grid;
+			grid-template-columns: repeat(6, 1fr);
+			grid-template-rows: repeat(5, 1fr);
+			gap: 16px;
+		}
+		.desk {
+			width: 70px;
+			height: 50px;
+			background: #ffe0b2;
+			border: 3px solid #b8860b;
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.3rem;
+			font-weight: bold;
+			transition: background 0.3s, color 0.3s;
+		}
+		.desk.animated {
+			background: #fffde7;
+			color: #bdb76b;
+			animation: deskFade 0.5s alternate infinite;
+		}
+		@keyframes deskFade {
+			0% { background: #fffde7; }
+			100% { background: #ffe0b2; }
+		}
+		.btn {
+			position: absolute;
+			padding: 10px 24px;
+			font-size: 1.1rem;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			font-weight: bold;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+			transition: background 0.2s;
+		}
+		.btn-start {
+			top: 24px;
+			right: 24px;
+			background: #1976d2;
+			color: #fff;
+		}
+		.btn-start:active {
+			background: #1565c0;
+		}
+		.btn-reset {
+			left: 24px;
+			bottom: 24px;
+			background: #fff;
+			color: #1976d2;
+			border: 2px solid #1976d2;
+		}
+		.btn-reset:active {
+			background: #e3f2fd;
+		}
+		.status {
+			position: absolute;
+			top: 120px;
+			right: 40px;
+			font-size: 1.2rem;
+			color: #d84315;
+			font-weight: bold;
+			background: rgba(255,255,255,0.9);
+			padding: 8px 18px;
+			border-radius: 8px;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="classroom">
+		<div class="blackboard">칠판</div>
+		<button class="btn btn-start" id="startBtn">시작</button>
+		<button class="btn btn-reset" id="resetBtn">초기화</button>
+		<div class="status" id="status">편성중<span id="dots"></span></div>
+		<div class="desks" id="desks">
+			<!-- 책상 30개 -->
+		</div>
+	</div>
+	<script>
+		const desksContainer = document.getElementById('desks');
+		const startBtn = document.getElementById('startBtn');
+		const resetBtn = document.getElementById('resetBtn');
+		const statusDiv = document.getElementById('status');
+		const dotsSpan = document.getElementById('dots');
+
+		function createDesks(contentArr = Array(30).fill('')) {
+			desksContainer.innerHTML = '';
+			for (let i = 0; i < 30; i++) {
+				const desk = document.createElement('div');
+				desk.className = 'desk';
+				desk.textContent = contentArr[i];
+				desksContainer.appendChild(desk);
+			}
+		}
+
+		function shuffle(arr) {
+			for (let i = arr.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[arr[i], arr[j]] = [arr[j], arr[i]];
+			}
+			return arr;
+		}
+
+		let animInterval = null;
+		let animTimeout = null;
+
+		function startAnimation() {
+			statusDiv.style.display = 'block';
+			let dotCount = 0;
+			dotsSpan.textContent = '';
+			// 책상 애니메이션 효과
+			const desks = document.querySelectorAll('.desk');
+			desks.forEach(desk => desk.classList.add('animated'));
+			animInterval = setInterval(() => {
+				dotCount = (dotCount + 1) % 4;
+				dotsSpan.textContent = '.'.repeat(dotCount);
+			}, 400);
+		}
+
+		function stopAnimation() {
+			statusDiv.style.display = 'none';
+			clearInterval(animInterval);
+			animInterval = null;
+			// 책상 애니메이션 효과 해제
+			const desks = document.querySelectorAll('.desk');
+			desks.forEach(desk => desk.classList.remove('animated'));
+		}
+
+		function assignNumbers() {
+			const numbers = shuffle(Array.from({length: 30}, (_, i) => i + 1));
+			createDesks(numbers);
+		}
+
+		function resetAll() {
+			stopAnimation();
+			createDesks();
+		}
+
+		startBtn.addEventListener('click', () => {
+			if (animInterval) return; // 이미 동작중이면 무시
+			startAnimation();
+			animTimeout = setTimeout(() => {
+				stopAnimation();
+				assignNumbers();
+			}, 5000);
+		});
+
+		resetBtn.addEventListener('click', () => {
+			if (animTimeout) clearTimeout(animTimeout);
+			resetAll();
+		});
+
+		// 최초 상태
+		createDesks();
+	</script>
+</body>
+</html>
